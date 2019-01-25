@@ -1,0 +1,338 @@
+---
+title: "Statistical inference with the GSS data"
+output: 
+  html_document: 
+    fig_height: 4
+    highlight: pygments
+    theme: spacelab
+---
+
+## Setup
+
+### Load packages
+
+```{r load-packages, message = FALSE}
+library(ggplot2)
+library(dplyr)
+library(statsr)
+```
+
+### Load data
+
+
+
+```{r load-data}
+load("gss.Rdata")
+```
+
+
+
+* * *
+
+## Part 1: Data
+
+```{r}
+# the GSS uses random sampling, using area quotas. There is a potential source of non respondent bias, GSS interviewers try to adreess this by interviewing only in weekends/holidays or in the afternoon-evening period weekdays.
+
+#Such metodology allows for the conclusions drawn from this data to be generalized to te whole population (English and spanish speakers, residents of the United States). However no causality can be infered from this data: a random assignment (experiment) would be necessary.
+```
+
+* * *
+
+## Part 2: Research question
+```{r}
+#Introduction:
+#The purpouse of this study is an evaluation of changes on respondents opinion on Space Program Spending. Fof this study we will consider that a person opinion as favourable to Space Program if response for variable natspace is 1(too little) or 2 (about right) and unfavourable if answer is 3 (too much). 
+
+# inference will be made comparing one year of each decade covered by the study: from the 70's to the 2000's
+
+#Question:
+#Did the proportion of people who view the space program favourable has changed from the  70's to 2000's?
+```
+
+
+
+* * *
+
+## Part 3: Exploratory data analysis
+
+```{r}
+#we will start by plotting how many observations we have in each year of the data:
+
+ggplot(data = gss, aes(x = year)) +
+  geom_histogram(bins=20)
+
+
+
+```
+
+```{r}
+#now we create Dataframes containing only the dates that are of our interest:
+
+Gss75 <- gss %>%
+  filter(year == 1975)
+Gss85 <- gss %>%
+  filter(year == 1985)
+Gss96 <- gss %>%
+  filter(year == 1996)
+Gss06 <- gss %>%
+  filter(year == 2006)
+```
+
+```{r}
+#before proceding with inference, let's sumarise our dataframes:
+
+summary(Gss75$natspac)
+summary(Gss85$natspac)
+summary(Gss96$natspac)
+summary(Gss06$natspac)
+
+```
+
+```{r}
+#throughout the years, we have noticed an increase in non responses of this question, there is a possibility that people are increasingly unaware of the space program and, therefore, does not feel confortable in giving an opinion on this matter.
+
+#the large number of non responses may compromise the study, should we simple disconsider than, therefore, we will proceed with tw separate analysis: one who disconsiders NA and another that will count them as failures. 
+
+#Let's get the sucess rates(disconsidering NA):
+
+Psucess75=
+  (length(which(Gss75$natspac == "Too Little"))+
+  length(which(Gss75$natspac == "About Right")))/
+  (length(which(Gss75$natspac == "Too Little"))+
+  length(which(Gss75$natspac == "About Right"))+
+  length(which(Gss75$natspac == "Too Much")))
+
+Total75=(length(which(Gss75$natspac == "Too Little"))+
+  length(which(Gss75$natspac == "About Right"))+
+  length(which(Gss75$natspac == "Too Much")))
+
+Psucess85=(length(which(Gss85$natspac == "Too Little"))+
+  length(which(Gss85$natspac == "About Right")))/
+  (length(which(Gss85$natspac == "Too Little"))+
+  length(which(Gss85$natspac == "About Right"))+
+  length(which(Gss85$natspac == "Too Much")))
+
+  Total85=(length(which(Gss85$natspac == "Too Little"))+
+  length(which(Gss85$natspac == "About Right"))+
+  length(which(Gss85$natspac == "Too Much")))
+
+Psucess96=(length(which(Gss96$natspac == "Too Little"))+
+  length(which(Gss96$natspac == "About Right")))/
+  (length(which(Gss96$natspac == "Too Little"))+
+  length(which(Gss96$natspac == "About Right"))+
+  length(which(Gss96$natspac == "Too Much")))
+
+Total96=(length(which(Gss96$natspac == "Too Little"))+
+  length(which(Gss96$natspac == "About Right"))+
+  length(which(Gss96$natspac == "Too Much")))
+
+Psucess06=(length(which(Gss06$natspac == "Too Little"))+
+  length(which(Gss06$natspac == "About Right")))/
+  (length(which(Gss06$natspac == "Too Little"))+
+  length(which(Gss06$natspac == "About Right"))+
+  length(which(Gss06$natspac == "Too Much")))
+
+Total06=(length(which(Gss06$natspac == "Too Little"))+
+  length(which(Gss06$natspac == "About Right"))+
+  length(which(Gss06$natspac == "Too Much")))
+
+
+
+paste("Psucess75: ", Psucess75, sep=" ")
+paste("Psucess85: ", Psucess85, sep=" ")
+paste("Psucess96: ", Psucess96, sep=" ")
+paste("Psucess06: ", Psucess06, sep=" ")
+
+
+#Let's get the sucess rates(considering NA):
+
+PsucessNA75=
+  (length(which(Gss75$natspac == "Too Little"))+
+  length(which(Gss75$natspac == "About Right")))/
+  (length(which(Gss75$natspac == "Too Little"))+
+  length(which(Gss75$natspac == "About Right"))+
+  length(which(Gss75$natspac == "Too Much"))+
+  length(which(is.na(Gss75$natspac))))
+
+TotalNA75=(length(which(Gss75$natspac == "Too Little"))+
+  length(which(Gss75$natspac == "About Right"))+
+  length(which(Gss75$natspac == "Too Much"))+
+  length(which(is.na(Gss75$natspac))))
+
+PsucessNA85=(length(which(Gss85$natspac == "Too Little"))+
+  length(which(Gss85$natspac == "About Right")))/
+  (length(which(Gss85$natspac == "Too Little"))+
+  length(which(Gss85$natspac == "About Right"))+
+  length(which(Gss85$natspac == "Too Much"))+
+  length(which(is.na(Gss85$natspac))))
+
+TotalNA85= (length(which(Gss85$natspac == "Too Little"))+
+  length(which(Gss85$natspac == "About Right"))+
+  length(which(Gss85$natspac == "Too Much"))+
+  length(which(is.na(Gss85$natspac))))
+
+PsucessNA96=(length(which(Gss96$natspac == "Too Little"))+
+  length(which(Gss96$natspac == "About Right")))/
+  (length(which(Gss96$natspac == "Too Little"))+
+  length(which(Gss96$natspac == "About Right"))+
+  length(which(Gss96$natspac == "Too Much"))+
+  length(which(is.na(Gss96$natspac))))
+
+TotalNA96=(length(which(Gss96$natspac == "Too Little"))+
+  length(which(Gss96$natspac == "About Right"))+
+  length(which(Gss96$natspac == "Too Much"))+
+  length(which(is.na(Gss96$natspac))))
+
+PsucessNA06=(length(which(Gss06$natspac == "Too Little"))+
+  length(which(Gss06$natspac == "About Right")))/
+  (length(which(Gss06$natspac == "Too Little"))+
+  length(which(Gss06$natspac == "About Right"))+
+  length(which(Gss06$natspac == "Too Much"))+
+  length(which(is.na(Gss06$natspac))))
+
+TotalNA06=(length(which(Gss06$natspac == "Too Little"))+
+  length(which(Gss06$natspac == "About Right"))+
+  length(which(Gss06$natspac == "Too Much"))+
+  length(which(is.na(Gss06$natspac))))
+
+
+paste("PsucessNA75: ", PsucessNA75, sep=" ")
+paste("PsucessNA85: ", PsucessNA85, sep=" ")
+paste("PsucessNA96: ", PsucessNA96, sep=" ")
+paste("PsucessNA06: ", PsucessNA06, sep=" ")
+
+```
+
+
+* * *
+
+## Part 4: Inference
+```{r}
+#Before proceding with the inference, we must check if conditions are met, that is
+
+#Independence within groups: This condition is met as the GSS uses random sampling and it sampled less than 10% of US Population
+#Independence between groups: as each group correspond to a different date, we can assume them as not paired
+#Sample size: we have more than 10 sucesses or failures in all of our variables
+```
+
+```{r}
+#As we have proportions, we will proceed with a series of hypotesis tests: Psucess75 will be tested against Psucess85, pSucess85 will also be tested against psucess96 and so on. The same process will be made for psucesses that consider NA:
+
+# Our estimator will be given as (p1-p2)+/- z*SE(p1-p2), the standard error will be given as: SE=(p1*(1-p1)/n1+p2*(1-p2)/n2)^(0.5)
+
+#our significance level is 95%, therefore:
+z=qnorm(0.95)
+
+
+#Hipotesis Test 1:
+#H0: pSucesss75-Psucess85=0
+#H1: pSucesss75-Psucess85!=0
+paste("Hipotesis Test 1: 75 and 85")
+p2=Psucess75
+p1=Psucess85
+n1=Total75
+n2=Total85
+
+SE=(p1*(1-p1)/n1+p2*(1-p2)/n2)^(0.5)
+
+Interval = c((p1-p2)+z*SE,(p1-p2)-z*SE)
+Interval
+
+#Hipotesis Test 2:
+#H0: pSucesss75-Psucess85=0
+#H1: pSucesss75-Psucess85!=0
+paste("Hipotesis Test 2: 85 and 96")
+p2=Psucess85
+p1=Psucess96
+n1=Total85
+n2=Total96
+
+SE=(p1*(1-p1)/n1+p2*(1-p2)/n2)^(0.5)
+
+Interval = c((p1-p2)+z*SE,(p1-p2)-z*SE)
+Interval
+
+#Hipotesis Test 3:
+#H0: pSucesss75-Psucess85=0
+#H1: pSucesss75-Psucess85!=0
+paste("Hipotesis Test 3: 96 and 06")
+p2=Psucess96
+p1=Psucess06
+n1=Total96
+n2=Total06
+
+SE=(p1*(1-p1)/n1+p2*(1-p2)/n2)^(0.5)
+
+Interval = c((p1-p2)+z*SE,(p1-p2)-z*SE)
+Interval
+
+```
+
+```{r}
+# There was, indeed a change in views of space program from the 1970's to the 1980's and also from 1990's to 2000's. However, views during the 80's and 90's remained the same. 
+
+#Changes were positive in this analysis, However, that might be misleading: the peak of interest in the space program was much likely in the late 60's and early 70's due to the race to the moon with USSR. Throughout the 80's NASA entered the space shuttle program which never really captured the public imagination. Perhaps a better conclusion will arise when we consider the non respondants:
+
+```
+
+```{r}
+#Thesane reasoning will be applied in these tests: 
+#As we have proportions, we will proceed with a series of hypotesis tests: Psucess75 will be tested against PsucessNA85, pSucessNA85 will also be tested against psucessNA96 and so on. The same process will be made for psucesses that consider NA:
+
+# Our estimator will be given as (p1-p2)+/- z*SE(p1-p2), the standard error will be given as: SE=(p1*(1-p1)/n1+p2*(1-p2)/n2)^(0.5)
+
+#our significance level is 95%, therefore:
+z=qnorm(0.95)
+
+
+#Hipotesis Test 1:
+#H0: pSucesss75-Psucess85=0
+#H1: pSucesss75-Psucess85!=0
+paste("Hipotesis Test 1: 75 and 85")
+p2=PsucessNA75
+p1=PsucessNA85
+n1=TotalNA75
+n2=TotalNA85
+
+SE=(p1*(1-p1)/n1+p2*(1-p2)/n2)^(0.5)
+
+Interval = c((p1-p2)+z*SE,(p1-p2)-z*SE)
+Interval
+
+#Hipotesis Test 2:
+#H0: pSucesss75-Psucess85=0
+#H1: pSucesss75-Psucess85!=0
+paste("Hipotesis Test 2: 85 and 96")
+p2=PsucessNA85
+p1=PsucessNA96
+n1=TotalNA85
+n2=TotalNA96
+
+SE=(p1*(1-p1)/n1+p2*(1-p2)/n2)^(0.5)
+
+Interval = c((p1-p2)+z*SE,(p1-p2)-z*SE)
+Interval
+
+#Hipotesis Test 3:
+#H0: pSucesss75-Psucess85=0
+#H1: pSucesss75-Psucess85!=0
+paste("Hipotesis Test 3: 96 and 06")
+p2=PsucessNA96
+p1=PsucessNA06
+n1=TotalNA96
+n2=TotalNA06
+
+SE=(p1*(1-p1)/n1+p2*(1-p2)/n2)^(0.5)
+
+Interval = c((p1-p2)+z*SE,(p1-p2)-z*SE)
+Interval
+```
+```{r}
+#Considering NA's as failures, we also may conclude that there were change in views of space program from the 1970's to the 1980's and also from 1990's to 2000's. However, views during the 80's and 90's remained the same. 
+
+#However, unlike the past test, changes of views were negative on such periods: A possible explanation could be an association with the end of apolo program in the 1970's. And the Hubble Space Telescope in the 90-00 (Which, altough responsible for many discoveries during the 21st century, was lauched with a design flaw in the 90's and, due to that, was constant target of jokes in the media at the time).
+
+
+```
+
